@@ -1,4 +1,4 @@
-from dash import html, register_page, dcc
+from dash import html, register_page, dcc, Input, Output, callback
 import dash_mantine_components as dmc
 from dash_iconify import DashIconify
 
@@ -23,6 +23,7 @@ layout = dmc.Center(
         p="30px",
         mt=60,
         children=[
+            dmc.Container(id='signup-error-container', style={'margin-bottom': '20px', "width": '300px'}),
             html.Form(
                 style={"width": '300px'},
                 method='POST',
@@ -77,3 +78,20 @@ layout = dmc.Center(
         ]
     )
 )
+
+@callback(
+    Output("signup-error-container", "children"),
+      Input('url', 'hash'),
+)
+def login_error(hash):
+    if "#error_signup" in hash:
+        alert = dmc.Alert(
+            "Please check all fields and try again.",
+            title="Error",
+            color="red",
+            withCloseButton=True,
+            hide=False
+        ),
+        return alert
+    else:
+        return ''

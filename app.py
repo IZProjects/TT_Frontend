@@ -60,7 +60,6 @@ def callback():
             "id": user.id,
             "email": user.email,
             "name": user.user_metadata.get("full_name"),
-            "avatar": user.user_metadata.get("avatar_url"),
         }
 
     return redirect(next)
@@ -74,7 +73,7 @@ def handle_signup():
     last_name = request.form.get("family_name")
 
     if not email or not password:
-        return "Missing email or password", 400
+        return redirect("/signup#error_signup")
 
     try:
         response = supabase.auth.sign_up({
@@ -95,7 +94,30 @@ def handle_signup():
         return redirect("/signup-confirmation")
 
     except Exception as e:
-        return f"Signup failed: {str(e)}", 400
+        return redirect("/signup#error_signup")
+
+# --------------------------------- Supabase Resend Sign up confirmation ---------------------------------------------
+
+@server.route("/resend-confirmation")
+def resend_confirmation():
+    pending_email = session.get("pending_email")
+
+    if not pending_email:
+        return redirect("/signup-confirmation#error_no_email")
+
+    try:
+        response = supabase.auth.resend({
+            "type": "signup",
+            "email": pending_email,
+            "options": {
+                "email_redirect_to": f"{request.host_url}welcome",
+            },
+        })
+        return redirect("/signup-confirmation?resent=true")
+
+    except Exception as e:
+        return redirect("/signup-confirmation?resent=true#error_no_resend")
+
 
 # --------------------------------- Supabase Email Sign In -------------------------------------------------------------
 @server.route("/signin/email", methods=["POST"])
@@ -125,14 +147,51 @@ def signin_with_email():
             "id": user.id,
             "email": user.email,
             "name": user.user_metadata.get("full_name"),
-            "avatar": user.user_metadata.get("avatar_url"),
         }
 
         return redirect("/")  # Redirect after login
 
     except Exception as e:
-        print("Login error:", e)
-        return redirect("/login#error")  # Optional error handling
+        return redirect("/login#loginerror")  # Optional error handling
+
+# --------------------------------- Supabase Reset Password ------------------------------------------------------------
+@server.route("/reset-password", methods=["POST"])
+def reset_password():
+    data = request.get_json()
+    email = data.get("email")
+
+    if not email:
+        return jsonify({"error": "Email is required"}), 400
+
+    try:
+        res = supabase.auth.reset_password_for_email(
+            email,
+            {"redirect_to": f"{request.host_url}update-password"}  # e.g. http://127.0.0.1:8050/update-password
+        )
+        if getattr(res, "error", None):
+            return jsonify({"error": res.error.message}), 400
+
+        return jsonify({"message": "Reset link sent successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# -------------------------------------- Supabase Sign Out -------------------------------------------------------------
+@server.route("/logout")
+def logout():
+    try:
+        # Sign out from Supabase
+        supabase.auth.sign_out()
+    except Exception as e:
+        print("Supabase sign-out error:", e)
+
+    # Clear Flask session
+    session.clear()
+
+    # Redirect to homepage or login page
+    return redirect("/login")  # or wherever you want the user to land after logging out
+
 
 
 # --------------------------------- DASH APP CONFIG --------------------------------------------------------------------
@@ -145,6 +204,8 @@ layout = dmc.AppShell(
         dcc.Store(id='user-info', data=['no']), #update this later
         dcc.Store(id='page-tag'),
         dcc.Store(id='page-metadata'),
+        dcc.Store(id='user-data'),
+        dcc.Store(id='user-access_token'),
         dmc.AppShellHeader(header, style={'padding-left': '20px', 'padding-right': '20px'}),
         dmc.AppShellNavbar(sidebar, style={'padding-left': '10px', 'padding-right': '10px', 'padding-top': '20px'}),
         dcc.Loading([
@@ -198,7 +259,21 @@ clientside_callback(
     Input("color-scheme-switch", "checked"),
 )
 
+@app.callback(
+    [Output("user-data", "data"),
+     Output("user-access_token", "data"),],
+     Input('url', 'pathname'),
+)
+def save_user_esssion(url):
+    """
+    Returns:
+        user-data (dict): {'email': 'asde3t@gmail.com', 'id': '771643fd-4e07-4543-a3d1-f98fd11732ab', 'name': 'Ivan Zheng'}
+        user-access_token (str): eyJhbGciOiJIUzI1NiIsImtpZCI6InczS0lUVjRnMENidXlNOFEiLCJ0eXAiOiJKV1QifQ.ey
 
+    """
+    print(session.get("user"))
+    print(session.get("access_token"))
+    return session.get("user"), session.get("access_token")
 
 
 if __name__ == "__main__":
