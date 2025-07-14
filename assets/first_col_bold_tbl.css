@@ -1,0 +1,5 @@
+/* Make the first column of all tables bold */
+.first_col_bold_tbl td:first-child,
+.first_col_bold_tbl th:first-child {
+    font-weight: bold;
+}

@@ -1,0 +1,54 @@
+/* Light theme (default) */
+.lightDropdown .Select-control {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ccc !important;
+}
+
+.lightDropdown .Select-menu-outer {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+.lightDropdown .Select-option {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+.lightDropdown .Select-option:hover {
+    background-color: #f0f0f0 !important;
+}
+.lightDropdown .Select-value-label{
+    color: black !important;
+}
+
+
+/* Dark theme */
+.darkDropdown .Select-control {
+    background-color: #2C2F33 !important;
+    color: #ffffff !important;
+    border: 1px solid #444 !important;
+}
+
+.darkDropdown .Select-menu-outer {
+    background-color: #2C2F33 !important;
+    color: #ffffff !important;
+}
+
+.darkDropdown .Select-option {
+    background-color: #2C2F33 !important;
+    color: #ffffff !important;
+}
+
+.darkDropdown .Select-option:hover {
+    background-color: #444 !important;
+}
+
+.darkDropdown .Select-value-label{
+    color: white !important;
+}
+
+.darkDropdown .Select-input{
+    color: #2C2F33 !important;
+    background-color: #2C2F33 !important;
+}

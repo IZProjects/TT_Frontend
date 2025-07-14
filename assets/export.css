@@ -1,0 +1,15 @@
+#table button.export {
+    display: none;
+}
+
+#table_ownership button.export {
+    display: none;
+}
+
+#table_transactions button.export {
+    display: none;
+}
+
+#table2 button.export {
+    display: none;
+}
