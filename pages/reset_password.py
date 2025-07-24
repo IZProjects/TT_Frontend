@@ -15,13 +15,14 @@ layout = dmc.Center(
         p="30px",
         mt=60,
         children=[
+            html.Div(id="reset-error-message"),
             dmc.Title("Forgot Password", order=2, style={'margin-bottom':'20px'}),
             dmc.Text("Enter the email address associated with your account and we will send you a link to reset your password.",
                      size='sm',
                      style={'margin-bottom':'20px'}),
             dmc.TextInput(label="Email", placeholder="Email", id="reset-email", required=True, style={'margin-bottom':'30px'}),
             dmc.Button("Request Password Reset", id="reset-btn", style={'margin-bottom':'30px'}),
-            dmc.Text(id="reset-status"),
+            html.Div(id="reset-status"),
         ],
     )
 )
@@ -46,13 +47,23 @@ def send_reset_email(n_clicks, email, href):
         # Send POST request to Flask route using dynamic URL
         response = requests.post(f"{base_url}/reset-password", json={"email": email})
         result = response.json()
-        alert = dmc.Alert(
-            children = result.get("message") or result.get("error"),
-            title="Success!",
-            color="green",
-            withCloseButton=True,
-            hide=False
-        ),
+        if "error" in result:
+            alert = dmc.Alert(
+                children=result.get("error"),
+                title="Error!",
+                color="red",
+                withCloseButton=True,
+                hide=False
+            )
+        else:
+            alert = dmc.Alert(
+                children=result.get("message"),
+                title="Success!",
+                color="green",
+                withCloseButton=True,
+                hide=False
+            )
+
         return alert
     except Exception as e:
         alert = dmc.Alert(
@@ -63,3 +74,22 @@ def send_reset_email(n_clicks, email, href):
             hide=False
         ),
         return alert
+
+
+@callback(
+    Output("reset-error-message", "children"),
+    Input('url', 'hash'),
+)
+def login_error(hash):
+    if "#error" in hash:
+        alert = dmc.Alert(
+            children="Sorry! An error has occurred. Please try again.",
+            title="Error",
+            color="red",
+            withCloseButton=True,
+            hide=False
+        ),
+    else:
+        alert = ''
+
+    return alert

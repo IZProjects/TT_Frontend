@@ -18,11 +18,11 @@ layout = dmc.Box([
 
 @callback(
     [Output("page1-user-data", "children"),
-     Output("page1-user-access_token", "children"),],
+     Output("page1-user-access_token", "children")],
      [Input("user-data", "data"),
-      Input("user-access_token", "data")]
+      Input("user-access_token", "data"),]
 )
-def print_user_data(user_data,User_access_token):
+def print_user_data(user_data, User_access_token):
     return str(user_data), User_access_token
 
 

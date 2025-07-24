@@ -1,7 +1,9 @@
-from dash import dcc, html, Input, Output, callback, register_page
+from dash import dcc, html, Input, Output, callback, register_page, State
 import pandas as pd
 import dash_mantine_components as dmc
 from datetime import datetime
+from supabase_client import supabase
+from flask import session
 
 # ---------------------------------------------- Functions ------------------------------------------------------------
 # ---------------------- Prepare timeseries string to list of dictionaries for dmc.Charts -----------------------------
@@ -300,12 +302,12 @@ def get_page_metadata(search, hash):
     [Input("growth-multi-select", "value"),
      Input("breakout-multi-select", "value"),
      Input("category-multi-select", "value"),
-     Input("user-info", "data"),],
+     Input("sub-token", "data")]
 
 )
-def generate_cards(growth_filter, breakout_filter, category_filter, user_info):
-    #change to actual user info
-    if 'yes' in user_info:
+def generate_cards(growth_filter, breakout_filter, category_filter, sub_token):
+
+    if sub_token == '453T73R90U2104E83':
         overlay_style = {
             "position": "absolute",
             "display": "none",

@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d6fb07b3-4a10-4f2b-a767-374fca165fec" name="Changes" comment="" />
+    <list default="true" id="d6fb07b3-4a10-4f2b-a767-374fca165fec" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/pages/pricing.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/update_password.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/sidebar.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/sidebar.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/01-landingpage.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/01-landingpage.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/02-page2.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/02-page2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/reset_password.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/reset_password.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -30,15 +39,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/00 App Projects/ASX Dashboard/FOR_DEPLOYMENT",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/00 App Projects/ASX Dashboard/FOR_DEPLOYMENT&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\00 App Projects\TradingTrends\TT_Frontend\pages" />
@@ -191,5 +200,10 @@
       <updated>1751516860628</updated>
     </task>
     <servers />
+  </component>
+  <component name="TerminalProjectNonSharedOptionsProvider">
+    <envs>
+      <env key="Stripe" value="C:\00 App Projects\stripe.exe" />
+    </envs>
   </component>
 </project>

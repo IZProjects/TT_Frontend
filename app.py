@@ -4,12 +4,16 @@ from components.header import header
 from components.sidebar import sidebar
 import os
 from dotenv import load_dotenv
-from flask import Flask, request, redirect, session, jsonify
+from flask import Flask, request, redirect, session, jsonify, json
 from supabase_client import supabase
+import stripe
+import flask
 
 # ----------------------------- LOAD ENVIROMENT VARIABLES --------------------------------
 load_dotenv()
 flask_secret_key = os.getenv("SECRET_KEY")
+stripe.api_key = os.getenv("STRIPE_SECRET")
+endpoint_secret = os.getenv("STRIPE_WEBHOOK_SECRET")
 
 # --------------------------------- Set up Flask Server ----------------------------------------------------------------
 server = Flask(__name__)
@@ -19,12 +23,23 @@ server.config.update(
     SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True  # Required when using SameSite=None
 )
-#FOR PRODUCTION WHEN LAUNCHING
-"""server.config.update(
-    SECRET_KEY=flask_secret_key,
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE = True
-)"""
+
+
+
+def create_user_profile(user):
+    user_id = user["id"]
+    email = user["email"]
+
+    # Check if the user already exists
+    response = supabase.table("user_profiles").select("id").eq("id", user_id).execute()
+
+    if not response.data:  # If data is an empty list, user does not exist
+        supabase.table("user_profiles").insert({
+            "id": user_id,
+            "email": email,
+        }).execute()
+    else:
+        pass
 
 
 # --------------------------------- Supabase Google OAuth --------------------------------------------------------------
@@ -53,6 +68,7 @@ def callback():
         # 2. Get user info using the access token (best practice)
         user_response = supabase.auth.get_user(access_token)
         user = user_response.user
+        create_user_profile({"id": user.id, "email": user.email})
 
         # 3. Store user and token in Flask session
         session["access_token"] = access_token
@@ -140,6 +156,7 @@ def signin_with_email():
         # Get user info
         user_response = supabase.auth.get_user(access_token)
         user = user_response.user
+        create_user_profile({"id": user.id, "email": user.email})
 
         # Save session
         session["access_token"] = access_token
@@ -154,7 +171,7 @@ def signin_with_email():
     except Exception as e:
         return redirect("/login#loginerror")  # Optional error handling
 
-# --------------------------------- Supabase Reset Password ------------------------------------------------------------
+# --------------------------------- Supabase Reset Password Email ------------------------------------------------------
 @server.route("/reset-password", methods=["POST"])
 def reset_password():
     data = request.get_json()
@@ -176,6 +193,39 @@ def reset_password():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# --------------------------------- Supabase Update Password -----------------------------------------------------------
+@server.route("/update-password-api", methods=["POST"])
+def update_password_api():
+    """
+    API endpoint to handle password update with the tokens from the reset email.
+    """
+    try:
+        data = request.get_json()
+        new_password = data.get("password")
+        access_token = data.get("access_token")
+        refresh_token = data.get("refresh_token")
+
+        if not new_password or not access_token:
+            return jsonify({"error": "Password and access token are required"}), 400
+
+        # Set the session with the tokens from the reset email
+        # This is necessary because update_user() uses the current session
+        supabase.auth.set_session(access_token, refresh_token)
+
+        # Update the user's password
+        response = supabase.auth.update_user({"password": new_password})
+
+        if hasattr(response, 'error') and response.error:
+            return jsonify({"error": response.error.message}), 400
+
+        # Clear the temporary session after password update
+        supabase.auth.sign_out()
+
+        return jsonify({"message": "Password updated successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # -------------------------------------- Supabase Sign Out -------------------------------------------------------------
 @server.route("/logout")
@@ -192,7 +242,65 @@ def logout():
     # Redirect to homepage or login page
     return redirect("/login")  # or wherever you want the user to land after logging out
 
+# -------------------------------------- Stripe  -------------------------------------------------------------
 
+def handle_new_subscription(stripe_customer_id, supabase_id, subscription_status):
+    supabase.table("user_profiles").update({
+        "stripe_customer_id": stripe_customer_id,
+        "subscription_status": subscription_status
+    }).eq("id", supabase_id).execute()
+
+def handle_cancel_subscription(stripe_customer_id, subscription_status):
+    supabase.table("user_profiles").update({
+        "subscription_status": subscription_status
+    }).eq("stripe_customer_id", stripe_customer_id).execute()
+
+
+@server.route('/webhook', methods=['POST'])
+def webhook():
+    print("✅ Webhook endpoint triggered")
+    event = None
+    payload = request.data
+
+    try:
+        event = json.loads(payload)
+    except json.decoder.JSONDecodeError as e:
+        print('⚠️  Webhook error while parsing basic request.' + str(e))
+        return jsonify(success=False)
+
+    if endpoint_secret:
+        # Only verify the event if there is an endpoint secret defined
+        # Otherwise use the basic event deserialized with json
+        sig_header = request.headers.get('stripe-signature')
+        try:
+            event = stripe.Webhook.construct_event(
+                payload, sig_header, endpoint_secret
+            )
+        except stripe.error.SignatureVerificationError as e:
+            print('⚠️  Webhook signature verification failed.' + str(e))
+            return jsonify(success=False)
+
+    # Handle the event
+    if event["type"] == "checkout.session.completed":
+        stripe_subscription = event["data"]["object"]
+        customer_id = stripe_subscription.get('customer')
+        supabase_id = stripe_subscription.get('client_reference_id')
+        subscription_status = 'active'
+        print(f"subscription created: {customer_id}")
+        handle_new_subscription(customer_id,supabase_id,subscription_status)
+
+    elif event["type"] == "customer.subscription.deleted":
+        stripe_subscription = event["data"]["object"]
+        customer_id = stripe_subscription.get('customer')
+        print(f"subscription cancelled: {customer_id}")
+        subscription_status = 'free'
+        handle_cancel_subscription(customer_id, subscription_status)
+
+    else:
+        # Unhandled event remove this in production
+        print('Unhandled event type {}'.format(event['type']))
+
+    return jsonify(success=True)
 
 # --------------------------------- DASH APP CONFIG --------------------------------------------------------------------
 _dash_renderer._set_react_version("18.2.0")
@@ -201,7 +309,7 @@ app = Dash(__name__, server=server, use_pages=True, external_stylesheets=dmc.sty
 layout = dmc.AppShell(
     [
         dcc.Location(id='url', refresh=True),
-        dcc.Store(id='user-info', data=['no']), #update this later
+        dcc.Store(id='sub-token'), #update this later
         dcc.Store(id='page-tag'),
         dcc.Store(id='page-metadata'),
         dcc.Store(id='user-data'),
@@ -261,21 +369,31 @@ clientside_callback(
 
 @app.callback(
     [Output("user-data", "data"),
-     Output("user-access_token", "data"),],
+     Output("user-access_token", "data"),
+     Output("sub-token", "data"),],
      Input('url', 'pathname'),
 )
 def save_user_esssion(url):
     """
     Returns:
         user-data (dict): {'email': 'asde3t@gmail.com', 'id': '771643fd-4e07-4543-a3d1-f98fd11732ab', 'name': 'Ivan Zheng'}
-        user-access_token (str): eyJhbGciOiJIUzI1NiIsImtpZCI6InczS0lUVjRnMENidXlNOFEiLCJ0eXAiOiJKV1QifQ.ey
+        user-access_token (str): eyJhbGciOiJIUzI1NiIsImtpZCI6EiLCJ0eXAiOiJKV1QifQ.ey
 
     """
-    print(session.get("user"))
-    print(session.get("access_token"))
-    return session.get("user"), session.get("access_token")
+    user_id = session.get("user")
+    if user_id != None:
+        response = supabase.table('user_profiles').select('subscription_status').eq('id',user_id.get('id')).execute()
+
+        if response.data[0].get("subscription_status") == 'active':
+            sub_status = '453T73R90U2104E83'
+        else:
+            sub_status = '52F31A09L75S48E41'
+    else:
+        sub_status = '52F31A09L75S48E41'
+
+    return session.get("user"), session.get("access_token"), sub_status
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)
 

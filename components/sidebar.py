@@ -60,5 +60,13 @@ sidebar = dmc.Box(
             variant="filled",
             color="indigo",
         ),
+        dmc.NavLink(
+            label="Pricing",
+            leftSection=DashIconify(icon="ep:office-building", width=20),
+            href="/pricing",
+            active="exact",
+            variant="filled",
+            color="indigo",
+        ),
         ]
     )
