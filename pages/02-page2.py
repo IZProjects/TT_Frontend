@@ -2,8 +2,7 @@ from dash import dcc, html, Input, Output, callback, register_page, State
 import pandas as pd
 import dash_mantine_components as dmc
 from datetime import datetime
-from supabase_client import supabase
-from flask import session
+from supabase_client import supabase_anon, supabase_service
 
 # ---------------------------------------------- Functions ------------------------------------------------------------
 # ---------------------- Prepare timeseries string to list of dictionaries for dmc.Charts -----------------------------
@@ -328,7 +327,8 @@ def generate_cards(growth_filter, breakout_filter, category_filter, sub_token):
             "zIndex": 1,
             "borderRadius": "12px"
         }
-
+    data = supabase_service.table("kw_joined").select("*").execute().data
+    print(data)
     df = pd.read_csv("Brand_Stock_Price_SVol_trend.csv")
     if growth_filter:
         df = df[df['Growth Indicator'] == growth_filter]

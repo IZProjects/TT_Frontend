@@ -5,7 +5,7 @@ from components.sidebar import sidebar
 import os
 from dotenv import load_dotenv
 from flask import Flask, request, redirect, session, jsonify, json
-from supabase_client import supabase
+from supabase_client import supabase_anon, supabase_service
 import stripe
 import flask
 
@@ -31,10 +31,10 @@ def create_user_profile(user):
     email = user["email"]
 
     # Check if the user already exists
-    response = supabase.table("user_profiles").select("id").eq("id", user_id).execute()
+    response = supabase_service.table("user_profiles").select("id").eq("id", user_id).execute()
 
     if not response.data:  # If data is an empty list, user does not exist
-        supabase.table("user_profiles").insert({
+        supabase_service.table("user_profiles").insert({
             "id": user_id,
             "email": email,
         }).execute()
@@ -45,7 +45,7 @@ def create_user_profile(user):
 # --------------------------------- Supabase Google OAuth --------------------------------------------------------------
 @server.route("/signin/google")
 def signin_with_google():
-    response = supabase.auth.sign_in_with_oauth(
+    response = supabase_anon.auth.sign_in_with_oauth(
         {
             "provider": "google",
             "options": {
@@ -62,11 +62,11 @@ def callback():
 
     if code:
         # 1. Exchange the code for a session
-        response = supabase.auth.exchange_code_for_session({"auth_code": code})
+        response = supabase_anon.auth.exchange_code_for_session({"auth_code": code})
         access_token = response.session.access_token
 
         # 2. Get user info using the access token (best practice)
-        user_response = supabase.auth.get_user(access_token)
+        user_response = supabase_anon.auth.get_user(access_token)
         user = user_response.user
         create_user_profile({"id": user.id, "email": user.email})
 
@@ -92,7 +92,7 @@ def handle_signup():
         return redirect("/signup#error_signup")
 
     try:
-        response = supabase.auth.sign_up({
+        response = supabase_anon.auth.sign_up({
             "email": email,
             "password": password,
             "options": {
@@ -122,7 +122,7 @@ def resend_confirmation():
         return redirect("/signup-confirmation#error_no_email")
 
     try:
-        response = supabase.auth.resend({
+        response = supabase_anon.auth.resend({
             "type": "signup",
             "email": pending_email,
             "options": {
@@ -146,7 +146,7 @@ def signin_with_email():
 
     try:
         # Sign in via Supabase
-        response = supabase.auth.sign_in_with_password({
+        response = supabase_anon.auth.sign_in_with_password({
             "email": email,
             "password": password,
         })
@@ -154,7 +154,7 @@ def signin_with_email():
         access_token = response.session.access_token
 
         # Get user info
-        user_response = supabase.auth.get_user(access_token)
+        user_response = supabase_anon.auth.get_user(access_token)
         user = user_response.user
         create_user_profile({"id": user.id, "email": user.email})
 
@@ -181,7 +181,7 @@ def reset_password():
         return jsonify({"error": "Email is required"}), 400
 
     try:
-        res = supabase.auth.reset_password_for_email(
+        res = supabase_anon.auth.reset_password_for_email(
             email,
             {"redirect_to": f"{request.host_url}update-password"}  # e.g. http://127.0.0.1:8050/update-password
         )
@@ -210,16 +210,16 @@ def update_password_api():
 
         # Set the session with the tokens from the reset email
         # This is necessary because update_user() uses the current session
-        supabase.auth.set_session(access_token, refresh_token)
+        supabase_anon.auth.set_session(access_token, refresh_token)
 
         # Update the user's password
-        response = supabase.auth.update_user({"password": new_password})
+        response = supabase_anon.auth.update_user({"password": new_password})
 
         if hasattr(response, 'error') and response.error:
             return jsonify({"error": response.error.message}), 400
 
         # Clear the temporary session after password update
-        supabase.auth.sign_out()
+        supabase_anon.auth.sign_out()
 
         return jsonify({"message": "Password updated successfully"}), 200
 
@@ -232,7 +232,7 @@ def update_password_api():
 def logout():
     try:
         # Sign out from Supabase
-        supabase.auth.sign_out()
+        supabase_anon.auth.sign_out()
     except Exception as e:
         print("Supabase sign-out error:", e)
 
@@ -245,13 +245,13 @@ def logout():
 # -------------------------------------- Stripe  -------------------------------------------------------------
 
 def handle_new_subscription(stripe_customer_id, supabase_id, subscription_status):
-    supabase.table("user_profiles").update({
+    supabase_service.table("user_profiles").update({
         "stripe_customer_id": stripe_customer_id,
         "subscription_status": subscription_status
     }).eq("id", supabase_id).execute()
 
 def handle_cancel_subscription(stripe_customer_id, subscription_status):
-    supabase.table("user_profiles").update({
+    supabase_service.table("user_profiles").update({
         "subscription_status": subscription_status
     }).eq("stripe_customer_id", stripe_customer_id).execute()
 
@@ -382,7 +382,7 @@ def save_user_esssion(url):
     """
     user_id = session.get("user")
     if user_id != None:
-        response = supabase.table('user_profiles').select('subscription_status').eq('id',user_id.get('id')).execute()
+        response = supabase_service.table('user_profiles').select('subscription_status').eq('id',user_id.get('id')).execute()
 
         if response.data[0].get("subscription_status") == 'active':
             sub_status = '453T73R90U2104E83'

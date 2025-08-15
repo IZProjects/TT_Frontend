@@ -30,8 +30,30 @@ menu = dmc.Menu(
                         dmc.MenuItem(
                             html.A(
                                 children=[
+                                    html.Span("My Account")
+                                ],
+                                href="/my_account",
+                                id="MyAccountMenuItem",
+                                style={
+                                    "display": "flex",
+                                    "justifyContent": "space-between",
+                                    "alignItems": "center",
+                                    "textDecoration": "none",
+                                    "color": "inherit",
+                                    "padding": "0.2rem 0.6rem",
+                                    "borderRadius": "1px",
+                                    "transition": "background-color 0.2s",
+                                    "width": "100%",  # ensures the spacing fills the container
+                                    "boxSizing": "border-box",
+                                }
+                            )
+                        ),
+
+
+                        dmc.MenuItem(
+                            html.A(
+                                children=[
                                     html.Span("Logout"),
-                                    DashIconify(icon="hugeicons:login-01", width=20)
                                 ],
                                 href="/logout",
                                 id="logoutMenuItem",
