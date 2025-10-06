@@ -369,29 +369,12 @@ clientside_callback(
 
 @app.callback(
     [Output("user-data", "data"),
-     Output("user-access_token", "data"),
-     Output("sub-token", "data"),],
+     Output("user-access_token", "data"),],
      Input('url', 'pathname'),
 )
 def save_user_esssion(url):
-    """
-    Returns:
-        user-data (dict): {'email': 'asde3t@gmail.com', 'id': '771643fd-4e07-4543-a3d1-f98fd11732ab', 'name': 'Ivan Zheng'}
-        user-access_token (str): eyJhbGciOiJIUzI1NiIsImtpZCI6EiLCJ0eXAiOiJKV1QifQ.ey
+    return session.get("user"), session.get("access_token")
 
-    """
-    user_id = session.get("user")
-    if user_id != None:
-        response = supabase_service.table('user_profiles').select('subscription_status').eq('id',user_id.get('id')).execute()
-
-        if response.data[0].get("subscription_status") == 'active':
-            sub_status = '453T73R90U2104E83'
-        else:
-            sub_status = '52F31A09L75S48E41'
-    else:
-        sub_status = '52F31A09L75S48E41'
-
-    return session.get("user"), session.get("access_token"), sub_status
 
 
 if __name__ == "__main__":

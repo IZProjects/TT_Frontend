@@ -5,14 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d6fb07b3-4a10-4f2b-a767-374fca165fec" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/pages/my_account.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/format-number-intl.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/discover-companies.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pages/discover-trends.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/utils/helpers.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/header.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/header.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/components/sidebar.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/sidebar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/02-page2.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/02-page2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/pricing.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/pricing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/supabase_client.py" beforeDir="false" afterPath="$PROJECT_DIR$/supabase_client.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/02-page2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/company.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/company.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/subscription.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/pages/trend.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/trend.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -39,15 +44,15 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/00 App Projects/TradingTrends/TT_Backend",
-    "settings.editor.selected.configurable": "terminal"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/00 App Projects/TradingTrends/TT_Frontend&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\00 App Projects\TradingTrends\TT_Frontend\pages" />
@@ -88,6 +93,27 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="SCRIPT_NAME" value="C:\00 App Projects\TradingTrends\TT_Frontend\clickable_card_example.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="discover-trends" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+      <module name="TT_Frontend" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/pages" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="SCRIPT_NAME" value="C:\00 App Projects\TradingTrends\TT_Frontend\pages\discover-trends.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -138,27 +164,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="paywall_overlay_example" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
-      <module name="TT_Frontend" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="C:\00 App Projects\TradingTrends\TT_Frontend\paywall_overlay_example.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="toy_app" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="TT_Frontend" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -183,10 +188,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.app" />
+        <item itemvalue="Python.discover-trends" />
         <item itemvalue="Python.toy_app" />
         <item itemvalue="Python.paywall_overlay_example (1)" />
         <item itemvalue="Python.clickable_card_example" />
-        <item itemvalue="Python.paywall_overlay_example" />
       </list>
     </recent_temporary>
   </component>
