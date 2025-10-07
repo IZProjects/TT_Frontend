@@ -5,7 +5,7 @@ import requests
 import flask
 
 
-register_page(__name__, path='/', name='Landing Page', title='tab title',
+register_page(__name__, path='/landing Page', name='Landing Page', title='tab title',
                    description="""google blurb description""") # '/' is home page
 
 

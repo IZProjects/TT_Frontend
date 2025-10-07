@@ -4,46 +4,25 @@ from dash_iconify import DashIconify
 
 sidebar = dmc.Box(
     children = [
-         dmc.NavLink(
-            label="Discover",
-            leftSection=DashIconify(icon="lets-icons:search-alt", width = 20),
-            href='/',
-            variant = "filled",
-            active="exact",
-            color = "indigo",
-        ),
+
         dmc.NavLink(
             label="Discover Trends",
             leftSection=DashIconify(icon="ep:office-building", width=20),
-            href="/discover-trends",
+            #href="/discover-trends",
+            href="/",
             active="exact",
             variant="filled",
             color="indigo",
         ),
         dmc.NavLink(
-            label="Company",
+            label="Discover Companies",
             leftSection=DashIconify(icon="ep:office-building", width=20),
-            href="/company",
+            href="/discover-companies",
             active="exact",
             variant="filled",
             color="indigo",
         ),
-        dmc.NavLink(
-            label="Subscription",
-            leftSection=DashIconify(icon="ep:office-building", width=20),
-            href="/subscription",
-            active="exact",
-            variant="filled",
-            color="indigo",
-        ),
-        dmc.NavLink(
-            label="Trend",
-            leftSection=DashIconify(icon="ep:office-building", width=20),
-            href="/trend",
-            active="exact",
-            variant="filled",
-            color="indigo",
-        ),
+        dmc.Divider(variant="solid", style={'margin-top': '5px', 'margin-bottom': '5px'}),
         dmc.NavLink(
             label="Login",
             leftSection=DashIconify(icon="ep:office-building", width=20),
@@ -60,14 +39,7 @@ sidebar = dmc.Box(
             variant="filled",
             color="indigo",
         ),
-        dmc.NavLink(
-            label="Pricing",
-            leftSection=DashIconify(icon="ep:office-building", width=20),
-            href="/pricing",
-            active="exact",
-            variant="filled",
-            color="indigo",
-        ),
+
         dmc.NavLink(
             label="My Account",
             leftSection=DashIconify(icon="ep:office-building", width=20),
@@ -76,10 +48,11 @@ sidebar = dmc.Box(
             variant="filled",
             color="indigo",
         ),
+        dmc.Divider(variant="solid", style={'margin-top': '5px', 'margin-bottom': '5px'}),
         dmc.NavLink(
-            label="Discover Companies",
+            label="Pricing",
             leftSection=DashIconify(icon="ep:office-building", width=20),
-            href="/discover-companies",
+            href="/pricing",
             active="exact",
             variant="filled",
             color="indigo",

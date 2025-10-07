@@ -266,7 +266,7 @@ sort_dropdown = dmc.Select(
 )
 
 # ------------------------------------------------ page layout --------------------------------------------------------
-register_page(__name__, name='Discover', title='Discover', description="""Page description for google blurb""")
+register_page(__name__, path='/', name='Discover', title='Discover', description="""Page description for google blurb""")
 
 layout = dmc.Box([
     dmc.VisuallyHidden(children="Google metadata title/description"), #change
