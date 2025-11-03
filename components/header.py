@@ -107,7 +107,7 @@ menu = dmc.Menu(
         )
 
 title_btn = dcc.Link(
-                    children=dmc.Title("Tickersight", c="blue", visibleFrom='md'),
+                    children=dmc.Title("TradableTrends", c="blue", visibleFrom='md'),
                     href="/",
                     style={"textDecoration": "none", "color": "inherit"}
                 ),

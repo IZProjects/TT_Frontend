@@ -111,8 +111,47 @@ def create_rows(data, overlay_style, free_limit):
     table = dmc.Stack(rows, gap='lg')
     return table
 
+# ------------------------------------------------ create dropdowns ---------------------------------------------------
+sort_dropdown = dmc.Select(
+    placeholder="Sort by...",
+    id="sort-select-companies",
+    data=["Average YoY Growth Descending", "Average YoY Growth Ascending", "Average Volume/Views Descending",
+          "Average Volume/Views Ascending", "Alphabetically Descending", "Alphabetically Ascending"],
+    w={"base": 200, "md": 400},
+    mb=10,
+    clearable=True,
+    searchable=True,
+    nothingFoundMessage="Nothing found...",
+    checkIconPosition="right",
+    persistence=True,
+    persistence_type='session',
+    value='YoY Growth Descending'
+)
 
-
+countries_select = dmc.Select(
+    placeholder="Sort by...",
+    id="country-select-companies",
+    w={"base": 200, "md": 400},
+    data=[
+            "USA", "China", "Hong Kong", "UK", "Germany", "France",
+            "Canada", "Australia", "Korea", "Switzerland", "Netherlands", "Sweden",
+            "Singapore", "Italy", "Spain", "Brazil", "Russia", "Saudi Arabia", "India", "Japan",
+            "South Africa", "Mexico", "Indonesia", "Thailand", "Malaysia", "Turkey",
+            "Taiwan", "Israel", "Poland", "Austria", "Belgium", "Finland", "Denmark",
+            "Norway", "Ireland", "Portugal", "Greece", "New Zealand", "Czech Republic",
+            "Hungary", "Chile", "Philippines", "Pakistan", "Vietnam", "Argentina",
+            "Egypt", "Nigeria", "Kenya", "Morocco", "Mauritius", "Ghana", "Tanzania",
+            "Uganda", "Zambia", "Zimbabwe", "Botswana", "Luxembourg", "Iceland",
+            "Romania", "Croatia", "Sri Lanka", "Peru", "Rwanda", "Malawi", "Unknown"
+        ],
+    mb=10,
+    clearable=True,
+    searchable=True,
+    nothingFoundMessage="Nothing found...",
+    checkIconPosition="right",
+    persistence=True,
+    persistence_type='session',
+)
 
 # ------------------------------------------------ page layout --------------------------------------------------------
 register_page(__name__, name='DiscoverCompanies', title='Discover Companies', description="""Page description for google blurb""")
@@ -120,6 +159,8 @@ register_page(__name__, name='DiscoverCompanies', title='Discover Companies', de
 layout = dmc.Box([
     dmc.VisuallyHidden(children="Google metadata title/description"), #change
     html.H1(children="Discover Companies"),
+    dmc.Group(children=[sort_dropdown, countries_select],
+              style={'margin-top': '5px', 'margin-bottom': '20px'}),
     dmc.Divider(variant='solid'),
     dmc.Paper(
         id='companies-paper',
@@ -130,14 +171,19 @@ layout = dmc.Box([
                                      total=300, value=1, withPages=False, style={"margin-top": "20px"}), ),
 ])
 
+
+
+
 # ------------------------------------- Callback: Create the rows -----------------------------------------------------
 @callback(
     Output("companies-paper", "children"),
      [Input("user-data", "data"),
       Input("pagination-withPages2", "value"),
+      Input("sort-select-companies", "value"),
+      Input("country-select-companies", "value"),
       ]
 )
-def generate_groups(user_data, page):
+def generate_groups(user_data, page, sort_filter, country_filter):
     # ------------------------ if the user has paid no paywall, otherwise paywall -------------------------------------
     if user_data != None:
         response = (
@@ -185,5 +231,28 @@ def generate_groups(user_data, page):
 
     start = limit * (page - 1) + 1
     end = min(total, limit * page)
-    data = supabase_service.table("kw_companies").select("*").range(start, end).execute().data
+
+    query = supabase_service.table("kw_companies").select("*")
+
+    # --------------------------------------- apply filters before query ---------------------------------------
+    if country_filter:
+        query = query.ilike("country", f"%{country_filter}%")
+
+    # --------------------------------------- apply sorting before query ---------------------------------------
+    if sort_filter == "YoY Growth Ascending":
+        query = query.order("avg_yoy", desc=False)
+    elif sort_filter == "YoY Growth Descending":
+        query = query.order("avg_yoy", desc=True)
+    elif sort_filter == "Volume/Views Ascending":
+        query = query.order("avg_volume", desc=False)
+    elif sort_filter == "Volume/Views Descending":
+        query = query.order("avg_volume", desc=True)
+    elif sort_filter == "Alphabetically Ascending":
+        query = query.order("ticker", desc=False)
+    elif sort_filter == "Alphabetically Descending":
+        query = query.order("ticker", desc=True)
+
+    # --------------------------------------- fetch data ---------------------------------------
+    data = query.range(start, end).execute().data
+
     return create_rows(data, overlay_style, free_limit)

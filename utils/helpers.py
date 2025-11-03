@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 import calendar
 import math
-
+import pandas as pd
+import numpy as np
 # -------------------------------------- format int to string with K, M, B --------------------------------------------
 def format_number(n):
     """
@@ -273,3 +274,141 @@ def adjust_to_nearest_dates(df1, df2):
     df1 = df1.copy()
     df1.index = adjusted_index
     return df1
+
+
+# ------------------------------------ get correlation between trend and stock price ----------------------------------
+def get_corr(trend, price_data, lt=True):
+    pairs = [p.strip() for p in trend.split(",") if p.strip()]
+    trend = [(datetime.strptime(d.split(":")[0].strip(), "%m/%d/%Y"),
+                     int(d.split(":")[1].strip().replace(",", ""))) for d in pairs]
+    df_trend = pd.DataFrame(trend, columns=["date", "trend_volume"]).set_index("date")
+
+    if lt==True:
+        corr_name = 'Long-term Correlation'
+    else:
+        corr_name = 'Short-term Correlation'
+
+    results = []
+    for price_dict in price_data:
+        df_price = pd.DataFrame(price_dict)
+        df_price["date"] = pd.to_datetime(df_price["date"])
+        df_price = df_price.set_index("date")
+        df_trend = adjust_to_nearest_dates(df_trend, df_price)
+        df_combined = df_price.join(df_trend, how="inner")
+        correlation = df_combined["close"].corr(df_combined["trend_volume"])
+        correlation = round(correlation,2)
+        ticker = price_dict['ticker']
+        code = price_dict['code']
+        results.append({'ticker':ticker, 'code':code, corr_name:correlation})
+    return results
+
+def safe_corr(a, b):
+    """Return Pearson r, or None if not enough clean data or zero variance."""
+    s = pd.DataFrame({"a": pd.to_numeric(a, errors="coerce"),
+                      "b": pd.to_numeric(b, errors="coerce")}).replace([np.inf, -np.inf], np.nan).dropna()
+    if len(s) < 2:
+        return None
+    if s["a"].std(ddof=1) == 0 or s["b"].std(ddof=1) == 0:
+        return None
+    r = s["a"].corr(s["b"])
+    return None if pd.isna(r) else round(float(r), 2)
+
+def get_corr_companies(data, price_data, months_window=2):
+    """
+    data: {'keywords': [{'keyword','type','trend': 'MM/DD/YYYY: 1,234, ...'}, ...]}
+    price_data: iterable with at least ['date','close']
+    months_window: months back from max date for the "recent" correlation
+    """
+    df_price_base = pd.DataFrame(price_data).copy()
+    df_price_base["date"] = pd.to_datetime(df_price_base["date"])
+    df_price_base = df_price_base.set_index("date").sort_index()
+
+    results = []
+
+    for kw_dict in data.get('keywords', []):
+        dtype = kw_dict.get('type', '')
+        prefix = "#" if dtype == "Tiktok" else ""
+        kw_label = f"{prefix}{kw_dict.get('keyword','')} ({dtype})"
+
+        trend_str = kw_dict.get('trend', '') or ''
+        pairs = [p.strip() for p in trend_str.split(",") if p.strip()]
+        trend = []
+        for item in pairs:
+            if ":" not in item:
+                continue
+            dpart, vpart = item.split(":", 1)
+            try:
+                d = datetime.strptime(dpart.strip(), "%m/%d/%Y")
+                v = int(vpart.strip().replace(",", ""))
+                trend.append((d, v))
+            except Exception:
+                continue
+
+        if not trend:
+            results.append({
+                "label": kw_label, "keyword": kw_dict.get('keyword'), "type": dtype,
+                "Long-term Correlation": None, "Short-term Correlation": None
+            })
+            continue
+
+        df_trend = pd.DataFrame(trend, columns=["date", "trend_volume"]).set_index("date").sort_index()
+
+        # Your custom aligner
+        aligned_price = adjust_to_nearest_dates(df_price_base, df_trend)
+
+        # Join & clean
+        df_combined = aligned_price.join(df_trend, how="inner")
+        if df_combined.empty:
+            results.append({
+                "label": kw_label, "keyword": kw_dict.get('keyword'), "type": dtype,
+                "Long-term Correlation": None, "Short-term Correlation": None
+            })
+            continue
+
+        # Coerce numeric & drop infs early
+        for col in ("close", "trend_volume"):
+            df_combined[col] = pd.to_numeric(df_combined[col], errors="coerce")
+        df_combined = df_combined.replace([np.inf, -np.inf], np.nan)
+
+        # Overall correlation (safe)
+        corr_all = safe_corr(df_combined["close"], df_combined["trend_volume"])
+
+        # Recent window correlation (safe)
+        cutoff = df_combined.index.max() - pd.DateOffset(months=months_window)
+        df_last = df_combined[df_combined.index >= cutoff]
+        corr_3m = safe_corr(df_last["close"], df_last["trend_volume"]) if not df_last.empty else None
+
+        results.append({
+            "label": kw_label,
+            "keyword": kw_dict.get('keyword'),
+            "type": dtype,
+            "Long-term Correlation": corr_all,
+            "Short-term Correlation": corr_3m
+        })
+
+    return results
+
+
+def merge_dict_lists(list1, list2):
+    # index list2 by (ticker, code)
+    index = {(d['ticker'], d['code']): d for d in list2}
+    merged = []
+    for d in list1:
+        key = (d.get('ticker'), d.get('code'))
+        if key in index:
+            merged.append({**d, **index[key]})
+        else:
+            merged.append(d.copy())
+    return merged
+
+def merge_dict_lists_companies(list1, list2):
+    # index list2 by (ticker, code)
+    index = {(d['keyword'], d['type']): d for d in list2}
+    merged = []
+    for d in list1:
+        key = (d.get('keyword'), d.get('type'))
+        if key in index:
+            merged.append({**d, **index[key]})
+        else:
+            merged.append(d.copy())
+    return merged

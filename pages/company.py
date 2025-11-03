@@ -8,7 +8,8 @@ import yfinance as yf
 from utils.EODHD_functions import get_historical_stock_data
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-from utils.helpers import parse_data_for_charts, round_sig, adjust_to_nearest_dates
+from utils.helpers import (parse_data_for_charts, round_sig, adjust_to_nearest_dates, get_corr_companies,
+                           merge_dict_lists_companies, convert_to_last_day_of_month)
 from datetime import datetime
 from dash_iconify import DashIconify
 
@@ -32,22 +33,15 @@ trend_dropdown = dmc.Select(
 
 # ------------------------------------------------ Page Layout --------------------------------------------------------
 layout = dmc.Box([
-    html.H1(id='tag_company'),
-    html.H1(id='stock_company'),
     dcc.Store(id='company-data-store'),
     dcc.Store(id='price-data-store2'),
-    dmc.Paper(id='company-header', style={'margin-bottom': '20px'}),
+    dmc.Paper(id='company-header', style={'margin-bottom': '10px'}),
+    dmc.Group(id='company-badge', style={'margin-bottom': '30px'},),
     dmc.Group(children=[trend_dropdown], style={'margin-bottom': '20px'}),
     dcc.Graph(id='main-chart-company'),
     dmc.Divider(variant="solid", style={'margin-bottom': '20px', 'margin-top': '20px'}),
-    dmc.SimpleGrid(
-        id='company-grid',
-        cols={"base": 1, "md": 2},
-        children=[
-            dmc.Paper(id='company-info', withBorder=True,),
-            dmc.Paper(children=dmc.Stack(id='company-correlation', justify='space-between')),
-        ],
-    ),
+    dmc.Paper(id='company-info', withBorder=True, style={'margin-bottom': '20px'}),
+    dmc.Paper(id='relation-table-companies', style={'margin-bottom': '20px'}),
     dmc.Divider(variant="solid", style={'margin-bottom': '20px', 'margin-top': '20px'}),
     dmc.Stack(children=[
         dmc.Text("Related Trends", fw=700, size='sm'),
@@ -59,8 +53,7 @@ layout = dmc.Box([
 # ------------------------------------------------ Callbacks ----------------------------------------------------------
 # ---------------------------- Stores the keyword data from kw_companies & stock price --------------------------------
 @callback(
-    [Output("stock_company", "children"),
-     Output("company-data-store", "data"),
+     [Output("company-data-store", "data"),
      Output("price-data-store2", "data"),],
      Input("page-metadata", "data"),
 )
@@ -86,16 +79,17 @@ def get_kw_data(metadata):
         price_data.columns = price_data.columns.str.lower()
 
     price_dict = price_data.to_dict(orient="list")
-    return metadata, data, price_dict
+    return data, price_dict
 # --------------------------------------------------- Generate Header -------------------------------------------------
 @callback(
-    Output("company-header", "children"),
+    [Output("company-header", "children"),
+     Output("company-badge", "children"),],
      Input("company-data-store", "data"),
 )
 def get_header_company(data):
-    header = dmc.Title(f"{data['full_name']} ({data['ticker']})")
-
-    return header
+    header = dmc.Title(f"{data['full_name']} ({data['ticker']}.{data['code']})")
+    badge = dmc.Badge(data['exchange'], radius='xs')
+    return header, badge
 
 
 
@@ -197,88 +191,12 @@ def get_stock_info(data):
 
 # -------------------------------------------- Creates the info & correlation -----------------------------------------
 @callback(
-    [Output("company-correlation", "children"),
-     Output("company-info", "children")],
-    [Input("company-data-store", "data"),
-     Input("price-data-store2", "data"),]
+     Output("company-info", "children"),
+    Input("company-data-store", "data"),
 )
-def gen_correlation(data, price_data):
-    info_section = dmc.Container(dcc.Markdown(data['description'], style={"margin-top": '15px'}), px='lg')
-
-    kw_list = data['keywords']
-
-    df_price = pd.DataFrame(price_data)
-    df_price["date"] = pd.to_datetime(df_price["date"])
-    df_price = df_price.set_index("date")
-
-    cards = []
-    for kw_dict in kw_list:
-        dtype = kw_dict['type']
-        if dtype == "Tiktok":
-            prefix = "#"
-        else:
-            prefix = ""
-        kw_label = f"{prefix}{kw_dict['keyword']} ({kw_dict['type']})"
-        trend = kw_dict['trend']
-        pairs = [p.strip() for p in trend.split(",") if p.strip()]
-        trend = [(datetime.strptime(d.split(":")[0].strip(), "%m/%d/%Y"),
-                  int(d.split(":")[1].strip().replace(",", ""))) for d in pairs]
-        df_trend = pd.DataFrame(trend, columns=["date", "trend_volume"]).set_index("date")
-        df_price = adjust_to_nearest_dates(df_price, df_trend)
-
-        df_combined = df_price.join(df_trend, how="inner")
-        df_last3m = df_combined[df_combined.index >= (df_combined.index.max() - pd.DateOffset(months=2))]
-
-        correlation = df_combined["close"].corr(df_combined["trend_volume"])
-        correlation = round(correlation,2)
-
-        correlation_last3m = df_last3m["close"].corr(df_last3m["trend_volume"])
-        correlation_last3m = round(correlation_last3m,2)
-
-        card = dmc.Paper(
-            children=[
-                dmc.Stack(
-                    children=[
-                        dmc.Group(
-                            children=[
-                                dmc.Text(
-                                    children=f"Correlation between {data['ticker_id']} & {kw_label}", fw=700),
-                                dmc.HoverCard(
-                                    shadow='md',
-                                    width=400,
-                                    children=[
-                                        dmc.HoverCardTarget(
-                                            DashIconify(icon="material-symbols:info-outline", width=20)
-                                        ),
-                                        dmc.HoverCardDropdown(
-                                            "Correlation ranges from -1 to 1. "
-                                            "A high correlation may mean the trend so far has been priced in. "
-                                            "A low or negative correlation may mean the trend has not been priced in OR"
-                                            " there is not a strong link between the trend and the stock OR there are "
-                                            "other factors affecting the stock price. Always do additional research!"
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            gap='sm'
-                        ),
-                        dmc.Text(children="Long-term correlation", fw=500),
-                        dmc.Title(children=str(correlation), order=2),
-                        dmc.Text(children="Last 3 month correlation", fw=500),
-                        dmc.Title(children=str(correlation_last3m), order=2),
-                    ],
-                    align="center",
-                    gap="sm",
-                )
-            ],
-            radius="sm",
-            p="lg",
-            shadow="sm",
-            withBorder=True,
-        )
-        cards.append(card)
-
-    return cards, info_section
+def gen_company_description(data):
+    info_section = dmc.Container(dcc.Markdown(data['description'], style={"margin-top": '15px'}), fluid=True, )
+    return info_section
 
 # --------------------------------------------- creates related trends btn---------------------------------------------
 @callback(
@@ -304,5 +222,49 @@ def gen_stock_btns(data):
 
         trend_btns.append(trend_btn)
 
-    trend_grid = dmc.SimpleGrid(children=trend_btns, cols=3)
+    trend_grid = dmc.Group(children=trend_btns, gap="md",)
     return trend_grid
+
+
+@callback(
+    Output("relation-table-companies", "children"),
+    [Input("company-data-store", "data"),
+     Input("price-data-store2", "data"),]
+)
+def create_relation_table(data, price_data):
+    data_tbl = data['keywords']
+    corr = get_corr_companies(data, price_data)
+    data_tbl = merge_dict_lists_companies(data_tbl, corr)
+    rows = [
+        dmc.TableTr(
+            [
+                dmc.TableTd(element["keyword"]),
+                dmc.TableTd(element["type"]),
+                dmc.TableTd(element["Long-term Correlation"]),
+                dmc.TableTd(element["Short-term Correlation"]),
+                dmc.TableTd(dcc.Markdown(element["relation"])),
+            ]
+        )
+        for element in data_tbl
+    ]
+
+    head = dmc.TableThead(
+        dmc.TableTr(
+            [
+                dmc.TableTh("Keyword/Hashtag"),
+                dmc.TableTh("Source"),
+                dmc.TableTh("Long-term Correlation"),
+                dmc.TableTh("Short-term Correlation"),
+                dmc.TableTh("Relationship with Trend"),
+            ]
+        )
+    )
+    body = dmc.TableTbody(rows)
+
+    tbl = dmc.Table(children=[head, body],
+                    striped=True,
+                    highlightOnHover=True,
+                    withTableBorder=True,
+                    withColumnBorders=True,
+                    )
+    return tbl

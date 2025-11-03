@@ -8,7 +8,7 @@ from datetime import datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from utils.helpers import (format_number, format_growth, get_last_date, get_first_date, convert_date_format,
-                           parse_data_for_charts, convert_to_last_day_of_month, round_sig, adjust_to_nearest_dates)
+                           parse_data_for_charts, convert_to_last_day_of_month, round_sig, get_corr, merge_dict_lists)
 from utils.EODHD_functions import get_historical_stock_data
 import yfinance as yf
 from statsmodels.tsa.seasonal import STL
@@ -151,17 +151,8 @@ layout = dmc.Box([
         style={'margin-top': '20px', 'margin-bottom': '20px'},
         value=["trend-accord","seasonality-accord", "momentum-accord"],
     ),
-    dmc.SimpleGrid(
-        id='kw-grid',
-        cols={"base": 1, "md": 2},
-        children=[
-            dmc.Paper(id='kw-info', withBorder=True),
-            dmc.Paper(children=dmc.Stack(id='kw-correlation', justify='space-between')),
-        ],
-    ),
-    html.H1(id='trend_page'),
-    html.H1(id='source_page'),
-    html.H1(id='result'),
+    dmc.Paper(id='kw-info', withBorder=True, style={'margin-bottom': '20px'}),
+    dmc.Paper(id='relation-table', style={'margin-bottom': '20px'}),
     dmc.Divider(variant="solid", style={'margin-bottom': '20px'}),
     dmc.Stack(children=[
         dmc.Text("Related Companies", fw=700, size='sm'),
@@ -173,15 +164,10 @@ layout = dmc.Box([
 # ------------------------------------------------ Callbacks ----------------------------------------------------------
 # ---------------------------------- Stores the keyword data from kw_joined -------------------------------------------
 @callback(
-    [Output("trend_page", "children"),
-     Output("source_page", "children"),
-     Output("kw-data-store", "data"),],
-    [Input("page-tag", "data"),
-     Input("page-metadata", "data"),],
+     Output("kw-data-store", "data"),
+     Input("page-metadata", "data"),
 )
-def get_kw_data(tag, metadata):
-    text = tag[0] + ': ' + metadata[0]
-    source = tag[1] + ': ' + metadata[1]
+def get_kw_data(metadata):
     response = (
         supabase_service.table("kw_joined")
         .select("*")
@@ -191,7 +177,7 @@ def get_kw_data(tag, metadata):
     )
     data = response.data
     data = data[0]
-    return text, source, data
+    return data
 
 # ---------------------------------- Creates the header with the KW and tags ------------------------------------------
 @callback(
@@ -527,78 +513,64 @@ def gen_stock_btns(data):
                         style={"textAlign": "center"})  # change href to exchange
         ], withBorder=True, shadow="xs")
         stock_btns.append(stock_btn)
-    company_btns = dmc.SimpleGrid(children=stock_btns, cols=3)
+    company_btns = dmc.Group(children=stock_btns, gap="md",)
     return company_btns
 
 # -------------------------------------------- Creates the info & correlation -----------------------------------------
 @callback(
-    [Output("kw-correlation", "children"),
-     Output("kw-info", "children")],
+     Output("kw-info", "children"),
+    Input("kw-data-store", "data"),
+)
+def gen_trend_info(data):
+    return dmc.Container(dcc.Markdown(data['description'], style={"margin-top": '15px'}), fluid=True,)
+
+
+@callback(
+    Output("relation-table", "children"),
     [Input("kw-data-store", "data"),
-     Input("period-select-kw", "value"),
      Input("price-data-store", "data"),]
 )
-def gen_correlation(data, period_filter, price_data):
-    if period_filter == "Long Term":
-        trend = convert_to_last_day_of_month(data['trend'])
-    elif period_filter == "Short Term":
-        trend = data['trend_st']
-    else:
-        print("invalid period")
+def create_relation_table(data, price_data):
+    trend = convert_to_last_day_of_month(data['trend'])
+    trend_st = convert_to_last_day_of_month(data['trend_st'])
+    corr = get_corr(trend, price_data, lt=True)
+    corr_st = get_corr(trend_st, price_data, lt=False)
 
-    pairs = [p.strip() for p in trend.split(",") if p.strip()]
-    trend = [(datetime.strptime(d.split(":")[0].strip(), "%m/%d/%Y"),
-                     int(d.split(":")[1].strip().replace(",", ""))) for d in pairs]
-    df_trend = pd.DataFrame(trend, columns=["date", "trend_volume"]).set_index("date")
-    cards = []
-    for price_dict in price_data:
-        df_price = pd.DataFrame(price_dict)
-        df_price["date"] = pd.to_datetime(df_price["date"])
-        df_price = df_price.set_index("date")
-        print(df_price)
-        df_trend = adjust_to_nearest_dates(df_trend, df_price)
-        df_combined = df_price.join(df_trend, how="inner")
-        correlation = df_combined["close"].corr(df_combined["trend_volume"])
-        correlation = round(correlation,2)
-        card = dmc.Paper(
-            children=[
-                dmc.Stack(
-                    children=[
-                        dmc.Group(
-                            children=[
-                                dmc.Text(
-                                    children=f"Correlation between trend & {price_dict['ticker']} ({price_dict['code']}): "
-                                             f"{period_filter}", fw=700),
-                                dmc.HoverCard(
-                                    shadow='md',
-                                    width=400,
-                                    children=[
-                                        dmc.HoverCardTarget(
-                                            DashIconify(icon="material-symbols:info-outline", width=20)
-                                        ),
-                                        dmc.HoverCardDropdown(
-                                            "Correlation ranges from -1 to 1. "
-                                            "A high correlation may mean the trend so far has been priced in. "
-                                            "A low or negative correlation may mean the trend has not been priced in OR"
-                                            " there is not a strong link between the trend and the stock OR there are "
-                                            "other factors affecting the stock price. Always do additional research!"
-                                        ),
-                                    ]
-                                ),
-                            ],
-                            gap='sm'
-                        ),
-                        dmc.Title(children=str(correlation), order=2),
-                    ],
-                    align="center",
-                    gap="sm",
-                )
-            ],
-            radius="sm",
-            p="lg",
-            shadow="sm",
-            withBorder=True,
+    data_tbl = data['tickers']
+    data_tbl = merge_dict_lists(data_tbl, corr)
+    data_tbl = merge_dict_lists(data_tbl, corr_st)
+
+    rows = [
+        dmc.TableTr(
+            [
+                dmc.TableTd(element["ticker"]),
+                dmc.TableTd(element["full_name"]),
+                dmc.TableTd(element["exchange"]),
+                dmc.TableTd(element["Long-term Correlation"]),
+                dmc.TableTd(element["Short-term Correlation"]),
+                dmc.TableTd(dcc.Markdown(element["relation"])),
+            ]
         )
-        cards.append(card)
+        for element in data_tbl
+    ]
 
-    return cards, dmc.Container(dcc.Markdown(data['description'], style={"margin-top": '15px'}), px='lg')
+    head = dmc.TableThead(
+        dmc.TableTr(
+            [
+                dmc.TableTh("Ticker"),
+                dmc.TableTh("Company Name"),
+                dmc.TableTh("Exchange"),
+                dmc.TableTh("Long-term Correlation"),
+                dmc.TableTh("Short-term Correlation"),
+                dmc.TableTh("Relationship with Trend"),
+            ]
+        )
+    )
+    body = dmc.TableTbody(rows)
+
+    tbl = dmc.Table(children=[head, body],
+                    striped=True,
+                    highlightOnHover=True,
+                    withTableBorder=True,
+                    withColumnBorders=True,)
+    return tbl

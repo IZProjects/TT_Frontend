@@ -1,4 +1,4 @@
-from dash import dcc, html, Input, Output, callback, register_page, State
+from dash import dcc, html, Input, Output, callback, register_page, State, ctx
 import pandas as pd
 import dash_mantine_components as dmc
 from datetime import datetime, timedelta
@@ -262,7 +262,8 @@ sort_dropdown = dmc.Select(
     nothingFoundMessage="Nothing found...",
     checkIconPosition="right",
     persistence=True,
-    persistence_type='session'
+    persistence_type='session',
+    value='YoY Growth Descending'
 )
 
 # ------------------------------------------------ page layout --------------------------------------------------------
@@ -270,7 +271,7 @@ register_page(__name__, path='/', name='Discover', title='Discover', description
 
 layout = dmc.Box([
     dmc.VisuallyHidden(children="Google metadata title/description"), #change
-    html.H1(children="Page 2"),
+    html.H1(children="Discover Trends"),
     dmc.Group(children=[period_dropdown, source_dropdown, category_dropdown, sort_dropdown],
               style={'margin-top': '5px', 'margin-bottom': '20px'}),
     dmc.Text("* Note: current month volumes are incomplete and are updated weekly", size='xs'),
@@ -317,25 +318,20 @@ def get_page_metadata(search, hash):
 )
 def generate_cards(category_filter, source_filter, sort_filter, period_filter, user_data, page):
     # ------------------------ if the user has paid no paywall, otherwise paywall -------------------------------------
-    if user_data != None:
+    if user_data is not None:
         response = (
             supabase_service.table("user_profiles")
             .select("subscription_status")
-            .eq("id", user_data['id'])
+            .eq("id", user_data["id"])
             .single()
             .execute()
         )
-        sub_status = response.data['subscription_status']
+        sub_status = response.data["subscription_status"]
     else:
         sub_status = None
 
-
-    if sub_status == 'active':
-        overlay_style = {
-            "position": "absolute",
-            "display": "none",
-            "zIndex": 1,
-        }
+    if sub_status == "active":
+        overlay_style = {"position": "absolute", "display": "none", "zIndex": 1}
     else:
         overlay_style = {
             "position": "absolute",
@@ -349,50 +345,53 @@ def generate_cards(category_filter, source_filter, sort_filter, period_filter, u
             "backdropFilter": "blur(4px)",
             "backgroundColor": "rgba(255, 255, 255, 0.7)",
             "zIndex": 1,
-            "borderRadius": "12px"
+            "borderRadius": "12px",
         }
 
-    # --------------------------------------- get the trend data from kw_joined ---------------------------------------
+    # --------------------------------------- pagination (reset on filter change) -------------------------------------
     limit = 9
-    total = 300
+    total = 300  # if you later compute total server-side, update this accordingly
 
-    start = limit * (page - 1) + 1
-    end = min(total, limit * page)
-    data = supabase_service.table("kw_joined").select("*").range(start, end).execute().data
+    changed = ctx.triggered_id  # which input fired this callback?
+    resetters = {"category-select", "source-select", "sort-select", "period-select"}
+    new_page = 1 if changed in resetters else (page or 0)
 
-    # --------------------------------------- filter data for short-term & long term-----------------------------------
+    # Supabase .range() is 0-based and inclusive, so end = start + limit - 1
+    start = limit * (new_page - 1)
+    end = min(total - 1, start + limit - 1)
+
+    # --------------------------------------- setup base query ---------------------------------------
     if period_filter == "Short Term":
-        for d in data:
-            d.pop("trend", None)
-            d.pop("trend_projected", None)
-        for d in data:
-            d['trend'] = d.pop('trend_st')
+        # Alias short-term trend as "trend", omit "trend_projected"
+        select_cols = "*,trend:trend_st"
+    else:
+        select_cols = "*"
 
-    # --------------------------------------- filter data based on dropdowns-------------------------------------------
+    query = supabase_service.table("kw_joined").select(select_cols)
+
+    # --------------------------------------- apply filters before query ---------------------------------------
     if category_filter:
-        data = [
-            row for row in data
-            if category_filter in [x.strip() for x in row['categories'].split(',')]
-        ]
-    if source_filter:
-        data = [
-            row for row in data
-            if source_filter in [x.strip() for x in row['type'].split(',')]
-        ]
+        query = query.ilike("categories", f"%{category_filter.strip()}%")
 
-    # ---------------------------------------- sort data based on dropdown---------------------------------------------
+    if source_filter:
+        query = query.ilike("type", f"%{source_filter.strip()}%")
+
+    # --------------------------------------- apply sorting before query ---------------------------------------
     if sort_filter == "YoY Growth Ascending":
-        data = sorted(data, key=lambda x: x['yoy'])
+        query = query.order("yoy", desc=False)
     elif sort_filter == "YoY Growth Descending":
-        data = sorted(data, key=lambda x: x['yoy'], reverse=True)
+        query = query.order("yoy", desc=True)
     elif sort_filter == "Volume/Views Ascending":
-        data = sorted(data, key=lambda x: x['volume'])
+        query = query.order("volume", desc=False)
     elif sort_filter == "Volume/Views Descending":
-        data = sorted(data, key=lambda x: x['volume'], reverse=True)
+        query = query.order("volume", desc=True)
     elif sort_filter == "Alphabetically Ascending":
-        data = sorted(data, key=lambda x: x['keyword'].lower())
+        query = query.order("keyword", desc=False)
     elif sort_filter == "Alphabetically Descending":
-        data = sorted(data, key=lambda x: x['keyword'].lower(), reverse=True)
+        query = query.order("keyword", desc=True)
+
+    # --------------------------------------- fetch data ---------------------------------------
+    data = query.range(start, end).execute().data
 
     # ---------------------------------------------- create the card --------------------------------------------------
     if page == 1:
