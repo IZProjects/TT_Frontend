@@ -5,17 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d6fb07b3-4a10-4f2b-a767-374fca165fec" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/pages/faq.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/pages/feedback_form.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/header.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/header.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/sidebar.py" beforeDir="false" afterPath="$PROJECT_DIR$/components/sidebar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/company.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/company.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/discover-companies.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/discover-companies.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pages/discover-trends.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/discover-trends.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pages/trend.py" beforeDir="false" afterPath="$PROJECT_DIR$/pages/trend.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/toy_app.py" beforeDir="false" afterPath="$PROJECT_DIR$/toy_app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/utils/helpers.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,7 +38,7 @@
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/00 App Projects/TradingTrends/TT_Backend&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/00 App Projects/TradingTrends/TT_Frontend&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;terminal&quot;
   }
 }</component>

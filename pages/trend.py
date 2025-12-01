@@ -206,12 +206,14 @@ def get_kw_header(data):
 )
 def get_stock_info(data):
     tickers = [item['ticker'] for item in data['tickers']]
+    print(tickers)
     response = (
-        supabase_service.table("kw_tickers")
+        supabase_service.table("kw_companies")
         .select("ticker, full_name, code, source")
         .in_("ticker", tickers)
         .execute()
     )
+    print(response.data)
     return response.data
 
 # ------------------------------------- Sets up what's in the data-select dropdown ------------------------------------
@@ -546,6 +548,8 @@ def create_relation_table(data, price_data):
                 dmc.TableTd(element["ticker"]),
                 dmc.TableTd(element["full_name"]),
                 dmc.TableTd(element["exchange"]),
+                dmc.TableTd(element["impact"]),
+                dmc.TableTd(element["direction"]),
                 dmc.TableTd(element["Long-term Correlation"]),
                 dmc.TableTd(element["Short-term Correlation"]),
                 dmc.TableTd(dcc.Markdown(element["relation"])),
@@ -560,6 +564,8 @@ def create_relation_table(data, price_data):
                 dmc.TableTh("Ticker"),
                 dmc.TableTh("Company Name"),
                 dmc.TableTh("Exchange"),
+                dmc.TableTh("Impact"),
+                dmc.TableTh("Direction"),
                 dmc.TableTh("Long-term Correlation"),
                 dmc.TableTh("Short-term Correlation"),
                 dmc.TableTh("Relationship with Trend"),
