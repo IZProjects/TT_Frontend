@@ -69,7 +69,7 @@ def get_kw_data(metadata):
     start_date, end_date = get_first_last_multi_trends(data['keywords'])
     if data['source'] == "EODHD":
         price_data = get_historical_stock_data(data['ticker_id'],
-                                               from_date=start_date, to_date=end_date)
+                                               from_date=start_date, to_date=datetime.today().strftime("%Y-%m-%d"))
         price_data["date"] = pd.to_datetime(price_data["date"])
     else:
         price_data = yf.download(data['ticker_id'],
@@ -109,10 +109,13 @@ def get_main_chart_company(data, price_data, trend, theme):
     df_price["date"] = pd.to_datetime(df_price["date"])
     df_price = df_price.reset_index(drop=True)
     fig.add_trace(
-        go.Candlestick(x=df_price['date'],
-                       open=df_price['open'], high=df_price['high'],
-                       low=df_price['low'], close=df_price['close'],
-                       name=f"Stock Price: {data['ticker_id']}"),
+        go.Scatter(
+            x=df_price['date'],
+            y=df_price['close'],
+            mode='lines',
+            name=f"Stock Price: {data['ticker_id']}",
+            line=dict(color="orange")
+        ),
         secondary_y=False,
     )
     fig.update_layout(xaxis_rangeslider_visible=False)
@@ -240,8 +243,8 @@ def create_relation_table(data, price_data):
             [
                 dmc.TableTd(element["keyword"]),
                 dmc.TableTd(element["type"]),
-                dmc.TableTd(element["Long-term Correlation"]),
-                dmc.TableTd(element["Short-term Correlation"]),
+                dmc.TableTd(element["impact"]),
+                dmc.TableTd(element["direction"]),
                 dmc.TableTd(dcc.Markdown(element["relation"])),
             ]
         )
@@ -253,8 +256,8 @@ def create_relation_table(data, price_data):
             [
                 dmc.TableTh("Keyword/Hashtag"),
                 dmc.TableTh("Source"),
-                dmc.TableTh("Long-term Correlation"),
-                dmc.TableTh("Short-term Correlation"),
+                dmc.TableTh("Relation"),
+                dmc.TableTh("Direction"),
                 dmc.TableTh("Relationship with Trend"),
             ]
         )

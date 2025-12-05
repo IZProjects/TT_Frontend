@@ -254,7 +254,7 @@ sort_dropdown = dmc.Select(
     placeholder="Sort by...",
     id="sort-select",
     data=["YoY Growth Descending", "YoY Growth Ascending", "Volume/Views Descending", "Volume/Views Ascending",
-           "Alphabetically Descending", "Alphabetically Ascending"],
+           "Alphabetically Descending", "Alphabetically Ascending", "Impact Descending", "Impact Ascending"],
     w={"base": 130, "md": 250},
     mb=10,
     clearable=True,

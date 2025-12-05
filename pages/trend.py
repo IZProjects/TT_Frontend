@@ -318,10 +318,6 @@ def gen_main_chart(data, period_filter, ticker, price_data, theme):
 
     # -------------------------- Generates candle stick charts onto the figure if selected ----------------------------
     start_date = kw_trend_x[0]
-    if period_filter == "Long Term":
-        end_date = kw_trend_x_prj[-1]
-    else:
-        end_date = kw_trend_x[-1]
 
     if ticker:
         stock_data = [d for d in price_data if d['ticker'] == ticker][0]
@@ -329,14 +325,17 @@ def gen_main_chart(data, period_filter, ticker, price_data, theme):
         stock_data.pop('code')
         df_price = pd.DataFrame(stock_data)
         df_price["date"] = pd.to_datetime(df_price["date"])
-        df_price = df_price[(df_price["date"] >= start_date) & (df_price["date"] <= end_date)]
+        df_price = df_price[df_price["date"] >= start_date]
         df_price = df_price.reset_index(drop=True)
+        print(df_price['date'])
         fig.add_trace(
-            go.Candlestick(x=df_price['date'],
-                           open=df_price['open'], high=df_price['high'],
-                           low=df_price['low'], close=df_price['close'],
-                           name=f"Stock Price: {ticker}"),
-            secondary_y=True,
+            go.Scatter(
+                x=df_price['date'],
+                y=df_price['close'],
+                mode='lines',
+                name=f"Stock Price: {ticker}",
+                line=dict(color="orange")
+            ), secondary_y=True
         )
         fig.update_layout(xaxis_rangeslider_visible=False)
 
@@ -388,7 +387,7 @@ def get_price_data(data, sData, data_filter):
     trend = data['trend'] + ', ' + data['trend_st']
 
     start_date = convert_date_format(get_first_date(trend))
-    end_date = convert_date_format(get_last_date(trend))
+    end_date = datetime.today().strftime("%Y-%m-%d")
 
     final_data = []
     for tag in data_filter:
@@ -529,18 +528,11 @@ def gen_trend_info(data):
 
 @callback(
     Output("relation-table", "children"),
-    [Input("kw-data-store", "data"),
-     Input("price-data-store", "data"),]
+    Input("kw-data-store", "data"),
 )
-def create_relation_table(data, price_data):
-    trend = convert_to_last_day_of_month(data['trend'])
-    trend_st = convert_to_last_day_of_month(data['trend_st'])
-    corr = get_corr(trend, price_data, lt=True)
-    corr_st = get_corr(trend_st, price_data, lt=False)
+def create_relation_table(data):
 
     data_tbl = data['tickers']
-    data_tbl = merge_dict_lists(data_tbl, corr)
-    data_tbl = merge_dict_lists(data_tbl, corr_st)
 
     rows = [
         dmc.TableTr(
@@ -550,8 +542,6 @@ def create_relation_table(data, price_data):
                 dmc.TableTd(element["exchange"]),
                 dmc.TableTd(element["impact"]),
                 dmc.TableTd(element["direction"]),
-                dmc.TableTd(element["Long-term Correlation"]),
-                dmc.TableTd(element["Short-term Correlation"]),
                 dmc.TableTd(dcc.Markdown(element["relation"])),
             ]
         )
@@ -564,10 +554,8 @@ def create_relation_table(data, price_data):
                 dmc.TableTh("Ticker"),
                 dmc.TableTh("Company Name"),
                 dmc.TableTh("Exchange"),
-                dmc.TableTh("Impact"),
+                dmc.TableTh("Relation"),
                 dmc.TableTh("Direction"),
-                dmc.TableTh("Long-term Correlation"),
-                dmc.TableTh("Short-term Correlation"),
                 dmc.TableTh("Relationship with Trend"),
             ]
         )

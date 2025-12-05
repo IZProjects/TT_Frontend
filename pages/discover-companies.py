@@ -48,12 +48,20 @@ def create_rows(data, overlay_style, free_limit):
 
             sparklineRow = dmc.SimpleGrid(
                 children=[
-                    dmc.NavLink(
-                        label=dmc.Text(children=keywordName, fw=500, size='lg'),
-                        leftSection=source_icon,
-                        href=f"/trend?trend={keywordData['keyword']}&source={keywordData['type']}#query",
-                    ),
-                    sparkline
+                    dmc.Stack([
+                        dmc.NavLink(
+                            label=dmc.Text(children=keywordName, fw=500, size='lg'),
+                            leftSection=source_icon,
+                            href=f"/trend?trend={keywordData['keyword']}&source={keywordData['type']}#query",
+                        ),
+                        dmc.Group([
+                            dmc.Badge(keywordData['impact'], variant="light", color='orange'),
+                            dmc.Badge(keywordData['direction'], variant="light", color='blue'),
+                        ]),
+
+                    ]),
+
+                    sparkline,
                 ],
                 cols=3,
                 spacing="xs",
@@ -91,6 +99,7 @@ def create_rows(data, overlay_style, free_limit):
             ],
             style=display_style
         )
+
 
         # ----------------------------------------------- create row --------------------------------------------------
         row = dmc.SimpleGrid(cols={"base": 1, "md": 2},
@@ -158,7 +167,12 @@ register_page(__name__, name='DiscoverCompanies', title='Discover Companies', de
 
 layout = dmc.Box([
     dmc.VisuallyHidden(children="Google metadata title/description"), #change
-    html.H1(children="Discover Companies"),
+    dmc.Title("Discover Companies", order=1),
+    dmc.Group([
+        dmc.Badge(children="Exchange", radius='sm', variant='filled', color='violet'),
+        dmc.Badge("Relation", variant="light", color='orange'),
+        dmc.Badge("Direction", variant="light", color='blue'),
+    ], style={'margin-bottom': '20px'}),
     dmc.Group(children=[sort_dropdown, countries_select],
               style={'margin-top': '5px', 'margin-bottom': '20px'}),
     dmc.Divider(variant='solid'),
